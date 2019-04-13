@@ -5,6 +5,8 @@ import re
 import time
 from bs4 import BeautifulSoup
 from http.cookiejar import CookieJar
+import urllib.robotparser as urobot
+
 
 
 class EmbalsesScraper():
@@ -20,7 +22,10 @@ class EmbalsesScraper():
 
     def __download_html(self, url):
         try:
-            response = urllib2.urlopen(url)
+            req = urllib2.Request(url)
+            req.add_unredirected_header('User-Agent', 'Mozilla/5.0')
+            response=urllib2.urlopen(req)
+            #response = urllib2.urlopen(url)
             html = response.read()
             return html
         except:
@@ -171,7 +176,16 @@ class EmbalsesScraper():
                     #Eliminamos la unidad que viene junto al valor en la columna 16
                     if (j == 16):
                         self.data[i][j]=self.data[i][j].replace("ha","")
-                    
+    
+    #Chequeamos si la URL permite el scraping en el fichero robots.txt
+    def __canScarp(self, the_url):
+        rp = urobot.RobotFileParser()
+        rp.set_url(the_url + "/robots.txt")
+        rp.read()
+        if rp.can_fetch("*", the_url):
+           return True
+        else:
+            return False  
    
     def scrape(self):
         # Start timer
@@ -187,21 +201,27 @@ class EmbalsesScraper():
         cuencas_links = self.__get_cuencas_links(html)
         for cuenca in cuencas_links:    
             #Obtenemos la pagina principal de cada cuenca y extramos los links a los embalses
-            html = self.__download_html(cuenca)
-            print("Procesando la cuenca: "+self.__get_nombre_from_link(cuenca,"cuenca"))
-            embalses_links = self.__get_embalses_links(html)
-            for embalse_link in embalses_links:
-                print("Se va a procesar el embalse: "+self.__get_nombre_from_link(embalse_link,"pantano")+ " de la cuenca: "+self.__get_nombre_from_link(cuenca,"cuenca"))
-                html = self.__download_html(embalse_link)
-                if (html is not None):
-                    #Cogemos las cabeceras en la primera ejecucion
-                    if get_cabeceras:
-                        #Las cabeceras estan contenidas en todos los objetos div con class "Campo"
-                        self.data.append(self.__get_info_embalse(html,"Campo"))
-                        get_cabeceras=False
-                    #Los datos estan contenidos en todos los objetos div con clase Resultado
-                    self.data.append(self.__get_info_embalse(html,"Resultado"))
-                    print("Embalse: "+self.__get_nombre_from_link(embalse_link,"pantano")+ " de la cuenca: "+self.__get_nombre_from_link(cuenca,"cuenca")+" Procesado")
+            if self.__canScarp(cuenca):
+                html = self.__download_html(cuenca)
+                print("Procesando la cuenca: "+self.__get_nombre_from_link(cuenca,"cuenca"))
+                embalses_links = self.__get_embalses_links(html)
+                for embalse_link in embalses_links:
+                    if self.__canScarp(embalse_link):
+                        print("Se va a procesar el embalse: "+self.__get_nombre_from_link(embalse_link,"pantano")+ " de la cuenca: "+self.__get_nombre_from_link(cuenca,"cuenca"))
+                        html = self.__download_html(embalse_link)
+                        if (html is not None):
+                            #Cogemos las cabeceras en la primera ejecucion
+                            if get_cabeceras:
+                                #Las cabeceras estan contenidas en todos los objetos div con class "Campo"
+                                self.data.append(self.__get_info_embalse(html,"Campo"))
+                                get_cabeceras=False
+                            #Los datos estan contenidos en todos los objetos div con clase Resultado
+                            self.data.append(self.__get_info_embalse(html,"Resultado"))
+                            print("Embalse: "+self.__get_nombre_from_link(embalse_link,"pantano")+ " de la cuenca: "+self.__get_nombre_from_link(cuenca,"cuenca")+" Procesado")
+                    else:
+                        print("El fichero robots.txt no permite la lectura de la URL: "+embalse_link)
+            else:
+                print("El fichero robots.txt no permite la lectura de la URL: "+cuenca)
         self.__dataCleansing()
         self.__dumpToCsv("embalses.csv")
         # Show elapsed time
