@@ -22,6 +22,7 @@ pip install time
 pip install Beautifulsoup4
 pip install CookieJar
 ```
+You can find the script under the folder "src". 
 The script must be executed as follows:
 
 ```
@@ -33,6 +34,7 @@ scraper.scrape()
 ```
 
 The records are stored in a CSV file.
+You can find an exemplary extract corresponding to the week of March 25-31, 2019 in the folder "data".
 
 The following information is extracted from each reservoir:
 * Name of the reservoir
@@ -88,6 +90,7 @@ pip install time
 pip install Beautifulsoup4
 pip install CookieJar
 ```
+El script se encuentra en la carpeta "src". 
 El script se debe ejecutar de la siguiente manera:
 
 ```
@@ -99,6 +102,7 @@ scraper.scrape()
 ```
 
 Los registros se almacenan en un archivo de tipo CSV.
+En la carpeta "data" se encuentra un extracto a modelo ejemplar, correspondiente a la semana del 25-31 de marzo de 2019.
 
 Se extrae la siguiente información de cada embalse:
 * Nombre del embalse	
